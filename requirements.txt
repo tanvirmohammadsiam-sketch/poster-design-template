@@ -1,5 +1,5 @@
 flask
-rembg
+rembg[cpu]
 pillow
 numpy
 gunicorn
