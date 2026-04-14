@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Photo Frame Maker</title>
+    <link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #4f8ef7;
+            --secondary: #a259ff;
+            --glass: rgba(255, 255, 255, 0.06);
+            --border: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            margin: 0;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Sora', sans-serif;
+            background: radial-gradient(circle at top, #0b1220, #050814);
+            color: white;
+            overflow: hidden;
+        }
+
+        /* Ambient Background Glow */
+        body::before, body::after {
+            content: "";
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            filter: blur(120px);
+            opacity: 0.2;
+            z-index: 0;
+        }
+        body::before { background: var(--primary); top: -100px; left: -100px; }
+        body::after { background: var(--secondary); bottom: -150px; right: -150px; }
+
+        .card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 400px;
+            padding: 40px;
+            border-radius: 24px;
+            background: var(--glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        .title {
+            font-size: 22px;
+            font-weight: 700;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            font-size: 11px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            color: rgba(255, 255, 255, 0.5);
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Drop Zone Styling */
+        .drop-zone {
+            position: relative;
+            width: 100%;
+            height: 120px;
+            border: 2px dashed var(--border);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: rgba(255, 255, 255, 0.03);
+            transition: all 0.3s ease;
+            cursor: pointer;
+            text-align: center;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .drop-zone.drag-over {
+            background: rgba(79, 142, 247, 0.1);
+            border-color: var(--primary);
+            transform: scale(1.02);
+        }
+
+        .drop-zone.has-file {
+            border-style: solid;
+            border-color: var(--secondary);
+            background: rgba(162, 89, 255, 0.05);
+        }
+
+        #photo-input {
+            position: absolute;
+            inset: 0;
+            opacity: 0;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .dz-icon { font-size: 24px; margin-bottom: 8px; }
+        .dz-text { font-size: 13px; color: rgba(255,255,255,0.7); pointer-events: none; }
+
+        /* Text Inputs */
+        input[type="text"] {
+            width: 100%;
+            padding: 14px;
+            border-radius: 12px;
+            border: 1px solid var(--border);
+            background: rgba(255, 255, 255, 0.08);
+            color: white;
+            outline: none;
+            font-size: 14px;
+            font-family: inherit;
+            box-sizing: border-box;
+            transition: 0.3s;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.12);
+        }
+
+        button {
+            width: 100%;
+            padding: 16px;
+            margin-top: 10px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 700;
+            color: white;
+            cursor: pointer;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            transition: 0.3s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(162, 89, 255, 0.4);
+        }
+    </style>
+</head>
+<body>
+
+<div class="card">
+    <div class="title">📸 Photo Frame Maker</div>
+
+    <form action="/upload" method="POST" enctype="multipart/form-data">
+        
+        <div class="form-group">
+            <label>Upload Photo</label>
+            <div class="drop-zone" id="drop-zone">
+                <div class="dz-icon">✨</div>
+                <div class="dz-text" id="photo-name">Drop image or click to browse</div>
+                <input type="file" id="photo-input" name="photo" accept="image/*" required>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Name</label>
+            <input type="text" name="name" placeholder="Enter your full name" required>
+        </div>
+
+        <div class="form-group">
+            <label>Designation</label>
+            <input type="text" name="designation" placeholder="e.g. Software Engineer" required>
+        </div>
+
+        <button type="submit">Generate Image 🚀</button>
+
+    </form>
+</div>
+
+<script>
+    const photoInput = document.getElementById('photo-input');
+    const photoName = document.getElementById('photo-name');
+    const dropZone = document.getElementById('drop-zone');
+
+    // 1. Handle Selection via Click/File Browser
+    photoInput.onchange = e => {
+        const userFile = e.target.files[0];
+        if (userFile) {
+            photoName.textContent = `✓ ${userFile.name}`;
+            dropZone.classList.add('has-file');
+        }
+    };
+
+    // 2. Drag & Drop Logic
+    dropZone.addEventListener('dragover', e => {
+        e.preventDefault();
+        dropZone.classList.add('drag-over');
+    });
+
+    dropZone.addEventListener('dragleave', () => {
+        dropZone.classList.remove('drag-over');
+    });
+
+    dropZone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropZone.classList.remove('drag-over');
+        
+        const files = e.dataTransfer.files;
+        if (files.length > 0 && files[0].type.startsWith('image/')) {
+            // Assign the dropped file to the hidden input
+            photoInput.files = files;
+            photoName.textContent = `✓ ${files[0].name}`;
+            dropZone.classList.add('has-file');
+        }
+    });
+</script>
+
+</body>
+</html>
